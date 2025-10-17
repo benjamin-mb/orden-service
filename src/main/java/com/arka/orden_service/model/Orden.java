@@ -41,6 +41,15 @@ public class Orden {
     @Column(name = "monto_total")
     private Integer montoTotal;
 
+    @Column(name = "direccion")
+    private String direccion;
+
+    @Column(name = "ciudad")
+    private String ciudad;
+
+    @Column( name = "pais")
+    private  String pais;
+
     @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<DetalleOrden> detalles = new ArrayList<>();
 
@@ -51,5 +60,10 @@ public class Orden {
         this.estado = Estado.pendiente;
         this.estadoEnvio = EstadoEnvio.PREPARANDO;
         this.montoTotal = montoTotal;
+    }
+
+    public void addDetalle(DetalleOrden detalleOrden){
+        detalles.add(detalleOrden);
+        detalleOrden.setOrden(this);
     }
 }

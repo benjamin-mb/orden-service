@@ -6,9 +6,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface OrdenRepository extends JpaRepository<Orden,Integer> {
     List<Orden>findByIdUsuario(Integer idUsuario);
-    List<Orden>findByIdUsuaroAndEstado(Integer idUsuario, Estado estado);
+    Optional<Orden> findByIdUsuarioAndEstado(Integer idUsuario, Estado estado);
+    boolean existsByIdUsuarioAndEstado(Integer idUsuario, Estado estado);
 }
