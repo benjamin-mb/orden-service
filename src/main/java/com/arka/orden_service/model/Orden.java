@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "ordenes")
@@ -38,6 +40,9 @@ public class Orden {
 
     @Column(name = "monto_total")
     private Integer montoTotal;
+
+    @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<DetalleOrden> detalles = new ArrayList<>();
 
     public Orden(Integer idUsuario, Integer idCarrito, LocalDateTime fecha, Integer montoTotal) {
         this.idUsuario = idUsuario;
