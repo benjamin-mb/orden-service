@@ -58,7 +58,7 @@ public class Orden {
         this.idCarrito = idCarrito;
         this.fecha = fecha;
         this.estado = Estado.pendiente;
-        this.estadoEnvio = EstadoEnvio.PREPARANDO;
+        this.estadoEnvio = EstadoEnvio.recibido;
         this.montoTotal = montoTotal;
     }
 

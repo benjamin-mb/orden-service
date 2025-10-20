@@ -43,6 +43,24 @@ public class UsuarioDireccionService {
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
+    public Mono<Direcciones> obtenerDireccionDeUsuarioporIdDireccion(Integer idUsuario, Integer idDireccion){
+        return Mono.fromCallable(() -> {
+            try {
+                Direcciones direccion = restClient.get()
+                        .uri("/api/usuarios/{idUsuario}/direcciones/{idDireccion}", idUsuario,idDireccion)
+                        .retrieve()
+                        .body(Direcciones.class);
+
+                log.info("Dirección obtenida: ", direccion);
+                return direccion;
+
+            } catch (Exception e) {
+                log.warn("No se pudo obtener dirección principal:", e.getMessage());
+                return null;
+            }
+        }).subscribeOn(Schedulers.boundedElastic());
+    }
+
 }
 
 

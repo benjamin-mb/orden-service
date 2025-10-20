@@ -33,3 +33,10 @@ eureka:
     fetch-registry: true
     registry-fetch-interval-seconds: 30
     eureka-server-connect-timeout-seconds: 10
+
+notificacion:
+  webhook:
+    estado-envio:
+      url: http://local1
+    confirmacion-orden:
+      url: http://local2
