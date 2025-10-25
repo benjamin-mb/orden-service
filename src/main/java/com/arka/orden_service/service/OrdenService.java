@@ -5,6 +5,8 @@ import com.arka.orden_service.dto.CrearOrdenEventDto;
 import com.arka.orden_service.dto.DetalleOrdenDto;
 import com.arka.orden_service.dto.UserResponse;
 import com.arka.orden_service.dto.VentaDto;
+import com.arka.orden_service.exceptions.OrdenInvalidStateException;
+import com.arka.orden_service.exceptions.OrdenNotFoundException;
 import com.arka.orden_service.messages.PublisherOrderCancelled;
 import com.arka.orden_service.model.DetalleOrden;
 import com.arka.orden_service.model.Estado;
@@ -13,6 +15,7 @@ import com.arka.orden_service.model.Orden;
 import com.arka.orden_service.repository.OrdenRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -100,17 +103,19 @@ public class OrdenService {
                 });
     }
 
-    public Mono<Orden> setEstado(Integer idOrden, Estado estado){
+    public Mono<Orden> setEstado(Integer idOrden, String stringEstado){
         return Mono.fromCallable(() -> {
             Orden orden = repository.findById(idOrden)
-                    .orElseThrow(() -> new IllegalArgumentException("Order not found with id: " + idOrden));
+                    .orElseThrow(() -> new OrdenNotFoundException("Order not found with id: " + idOrden));
 
+            stringEstado.toLowerCase();
+            Estado estado= Estado.valueOf(stringEstado);
             if (estado.equals(Estado.confirmada)) {
                 if (orden.getEstado().equals(Estado.confirmada)) {
-                    throw new IllegalArgumentException("Order was already confirmed");
+                    throw new OrdenInvalidStateException("Order was already confirmed");
                 }
                 if (orden.getEstado().equals(Estado.cancelada)) {
-                    throw new IllegalArgumentException("Order was already cancelled and cannot be reactivated");
+                    throw new OrdenInvalidStateException("Order was already cancelled and cannot be reactivated");
                 }
 
 
@@ -134,7 +139,7 @@ public class OrdenService {
             } else if (estado.equals(Estado.cancelada)) {
                 if (orden.getEstadoEnvio().equals(EstadoEnvio.en_camino) ||
                         orden.getEstadoEnvio().equals(EstadoEnvio.entregado)) {
-                    throw new IllegalArgumentException("The order can't be cancelled because it was already sent");
+                    throw new OrdenInvalidStateException("The order can't be cancelled because it was already sent");
                 }
                 orden.setEstado(Estado.cancelada);
 
@@ -148,27 +153,29 @@ public class OrdenService {
     }
 
     @Transactional
-    public Mono<Orden> setEstadoEnvio(Integer idOrden, EstadoEnvio nuevoEstado) {
+    public Mono<Orden> setEstadoEnvio(Integer idOrden, String nuevoEstadoString) {
         return Mono.fromCallable(() -> {
+            nuevoEstadoString.toLowerCase();
+            EstadoEnvio nuevoEstado=EstadoEnvio.valueOf(nuevoEstadoString);
             Orden orden = repository.findById(idOrden)
-                    .orElseThrow(() -> new IllegalArgumentException("Order not found with id: " + idOrden));
+                    .orElseThrow(() -> new OrdenNotFoundException("Order not found with id: " + idOrden));
 
             if (!orden.getEstado().equals(Estado.confirmada)) {
-                throw new IllegalArgumentException("Cannot change shipping status of unconfirmed order");
+                throw new OrdenInvalidStateException("Cannot change shipping status of unconfirmed order");
             }
 
             EstadoEnvio estadoActual = orden.getEstadoEnvio();
 
             if (estadoActual.equals(EstadoEnvio.recibido)) {
-                throw new IllegalArgumentException("Order must be confirmed first");
+                throw new OrdenInvalidStateException("Order must be confirmed first");
             }
 
             if (estadoActual.equals(EstadoEnvio.entregado)) {
-                throw new IllegalArgumentException("Order already delivered, cannot change status");
+                throw new OrdenInvalidStateException("Order already delivered, cannot change status");
             }
 
             if (estadoActual.equals(EstadoEnvio.en_camino) && nuevoEstado.equals(EstadoEnvio.preparando)) {
-                throw new IllegalArgumentException("Cannot go back to PREPARANDO from EN_CAMINO");
+                throw new OrdenInvalidStateException("Cannot go back to PREPARANDO from EN_CAMINO");
             }
 
             orden.setEstadoEnvio(nuevoEstado);
@@ -176,7 +183,7 @@ public class OrdenService {
 
             UserResponse userResponse = obtenerEmailUsuario.obtenerUsuario(orden.getIdUsuario());
             if (userResponse != null) {
-                if (nuevoEstado==EstadoEnvio.entregado){setEstado(orden.getId(),Estado.terminada);}
+                if (nuevoEstado==EstadoEnvio.entregado){setEstado(orden.getId(), String.valueOf(Estado.terminada));}
                 notificationsComponent.notificacionEstadoEnvio(userResponse, orden.getId(), nuevoEstado);
             }
 
@@ -190,14 +197,14 @@ public class OrdenService {
         return Mono.fromCallable(() -> {
 
                     Orden orden = repository.findById(idOrden)
-                            .orElseThrow(() -> new IllegalArgumentException("Order not found with id: " + idOrden));
+                            .orElseThrow(() -> new OrdenNotFoundException("Order not found with id: " + idOrden));
 
                     if (!orden.getEstado().equals(Estado.pendiente)||!orden.getEstado().equals(Estado.confirmada)){
-                        throw new IllegalArgumentException("Cannot change address of a confirmed or cancelled order");
+                        throw new OrdenInvalidStateException("Cannot change address of a confirmed or cancelled order");
                     }
 
                     if (!orden.getEstadoEnvio().equals(EstadoEnvio.recibido)||!orden.getEstadoEnvio().equals(EstadoEnvio.preparando)){
-                        throw new IllegalArgumentException("Cannot change address, order is already being processed");
+                        throw new OrdenInvalidStateException("Cannot change address, order is already being processed");
                     }
 
                     return orden;
@@ -216,5 +223,34 @@ public class OrdenService {
                             }).subscribeOn(Schedulers.boundedElastic()));
                 });
 
+    }
+
+    @Transactional(readOnly = true)
+    public Mono<Orden> obtenerOrden(Integer idOrden) {
+        return Mono.fromCallable(() -> repository.findById(idOrden)
+                        .orElseThrow(() -> new OrdenNotFoundException("Order not found with id: " + idOrden)))
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    @Transactional(readOnly = true)
+    public Flux<Orden> obtenerOrdenesPorUsuario(Integer idUsuario) {
+        return Mono.fromCallable(() -> repository.findByIdUsuario(idUsuario))
+                .flatMapMany(Flux::fromIterable)
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    @Transactional(readOnly = true)
+    public Flux<Orden> obtenerTodasLasOrdenes() {
+        return Mono.fromCallable(repository::findAll)
+                .flatMapMany(Flux::fromIterable)
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    public Flux<Orden>obteneTodasPorEstadoEnvio(String estadoEnvioString){
+        estadoEnvioString.toLowerCase();
+        EstadoEnvio estadoEnvio=EstadoEnvio.valueOf(estadoEnvioString);
+        return Mono.fromCallable(()->repository.findAllByEstadoEnvio(estadoEnvio))
+                .flatMapMany(Flux::fromIterable)
+                .subscribeOn(Schedulers.boundedElastic());
     }
 }

@@ -1,6 +1,7 @@
 package com.arka.orden_service.service;
 
 import com.arka.orden_service.dto.Direcciones;
+import com.arka.orden_service.exceptions.DireccionNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.client.ServiceInstance;
@@ -56,7 +57,7 @@ public class UsuarioDireccionService {
 
             } catch (Exception e) {
                 log.warn("No se pudo obtener dirección principal:", e.getMessage());
-                return null;
+                throw new DireccionNotFoundException("Addres not found");
             }
         }).subscribeOn(Schedulers.boundedElastic());
     }

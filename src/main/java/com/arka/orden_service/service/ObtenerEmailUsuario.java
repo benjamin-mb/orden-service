@@ -1,6 +1,7 @@
 package com.arka.orden_service.service;
 
 import com.arka.orden_service.dto.UserResponse;
+import com.arka.orden_service.exceptions.EmailNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -28,7 +29,7 @@ public class ObtenerEmailUsuario {
                     return userResponse;
         } catch (Exception e) {
             log.error("error: "+e);
-            throw new RuntimeException(e);
+            throw new EmailNotFoundException("email not found ");
         }
     }
 }
