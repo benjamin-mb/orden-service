@@ -6,14 +6,16 @@ notificacion:
     estado-envio:
       url: http://local1
     confirmacion-orden:
-      url: http://local2
+      url: https://n8nworkflows1.app.n8n.cloud/webhook-test/a3b0c2ff-c479-4efd-9613-d31583a70b8a
+
 spring:
   application:
-    name: orden-service
+      name: orden-service
   config:
-    import: optional:configserver:http://localhost:8888
+      import: optional:configserver:http://localhost:8888
   profiles:
-    active: dev
+      active: dev
+
   rabbitmq:
     host: localhost
     port: 5672
