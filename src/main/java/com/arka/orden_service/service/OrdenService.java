@@ -10,6 +10,8 @@ import com.arka.orden_service.model.Estado;
 import com.arka.orden_service.model.EstadoEnvio;
 import com.arka.orden_service.model.Orden;
 import com.arka.orden_service.repository.OrdenRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
@@ -22,6 +24,7 @@ import java.util.List;
 @Service
 public class OrdenService {
 
+    private final Logger log= LoggerFactory.getLogger(OrdenService.class);
     private final OrdenRepository repository;
     private final UsuarioDireccionService usuarioDireccionService;
     private final PublisherOrderCancelled publisherOrderCancelled;
@@ -195,11 +198,13 @@ public class OrdenService {
 
             orden.setEstadoEnvio(nuevoEstado);
             Orden ordenGuardada = repository.save(orden);
-
+            log.info("inicio de get email");
             UserResponse userResponse = obtenerEmailUsuario.obtenerUsuario(orden.getIdUsuario());
+            log.info("email se obtuvo", userResponse);
             if (userResponse != null) {
                 if (nuevoEstado==EstadoEnvio.entregado){setEstado(orden.getId(), String.valueOf(Estado.terminada));}
                 notificationsComponent.notificacionEstadoEnvio(userResponse, orden.getId(), nuevoEstado);
+                log.info("webhook enviado");
             }
 
             return ordenGuardada;
@@ -262,8 +267,8 @@ public class OrdenService {
     }
 
     public Flux<Orden>obteneTodasPorEstadoEnvio(String estadoEnvioString){
-        estadoEnvioString.toLowerCase();
-        EstadoEnvio estadoEnvio=EstadoEnvio.valueOf(estadoEnvioString);
+        String stringLower=estadoEnvioString.toLowerCase();
+        EstadoEnvio estadoEnvio=EstadoEnvio.valueOf(stringLower);
         return Mono.fromCallable(()->repository.findAllByEstadoEnvio(estadoEnvio))
                 .flatMapMany(Flux::fromIterable)
                 .subscribeOn(Schedulers.boundedElastic());

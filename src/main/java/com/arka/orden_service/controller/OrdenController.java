@@ -48,7 +48,7 @@ public class OrdenController {
     }
 
     @GetMapping("/All/Estado/{estado}")
-    public Flux<Orden>obtenerTodasLasOrdenesPorEstado(String estado){
+    public Flux<Orden>obtenerTodasLasOrdenesPorEstado(@PathVariable String estado){
         return ordenService.obteneTodasPorEstadoEnvio(estado);
     }
     @GetMapping()
