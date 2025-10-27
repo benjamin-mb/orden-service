@@ -15,7 +15,7 @@ public class ObtenerEmailUsuario {
 
     public ObtenerEmailUsuario(RestClient.Builder restClientBuilder) {
         this.restClient = restClientBuilder
-                .baseUrl("http://usuario-service")
+                .baseUrl("http://USUARIO-SERVICE")
                 .build();
     }
 

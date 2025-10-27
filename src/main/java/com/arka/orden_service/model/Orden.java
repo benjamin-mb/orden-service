@@ -1,5 +1,7 @@
 package com.arka.orden_service.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -50,7 +52,8 @@ public class Orden {
     @Column( name = "pais")
     private  String pais;
 
-    @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
+    @JsonManagedReference
     private List<DetalleOrden> detalles = new ArrayList<>();
 
     public Orden(Integer idUsuario, Integer idCarrito, LocalDateTime fecha, Integer montoTotal) {

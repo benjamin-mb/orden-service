@@ -4,10 +4,9 @@ server:
 notificacion:
   webhook:
     estado-envio:
-      url: http://local1
+      url: https://n8nworkflows1.app.n8n.cloud/webhook/4cb84fab-a22f-42d5-adea-cbcf537c16b0
     confirmacion-orden:
       url: https://n8nworkflows1.app.n8n.cloud/webhook-test/a3b0c2ff-c479-4efd-9613-d31583a70b8a
-
 spring:
   application:
       name: orden-service

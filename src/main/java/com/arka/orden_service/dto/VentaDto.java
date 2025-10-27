@@ -10,5 +10,5 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class VentaDto {
-    List<DetalleOrdenDto>items;
+    List<DetalleOrdenVentaDto>items;
 }

@@ -42,6 +42,7 @@ public class NotificationsComponent {
 
     public void notificacionConfirmacion(VentaDto dto){
         try{
+            log.info("inicio el post");
             restClient.post()
                     .uri(urlWeebhookConfrimacionDeOrden)
                     .body(dto)

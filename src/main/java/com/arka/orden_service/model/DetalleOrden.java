@@ -1,5 +1,6 @@
 package com.arka.orden_service.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.AllArgsConstructor;
@@ -20,6 +21,7 @@ public class DetalleOrden {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_orden", nullable = false)
+    @JsonBackReference
     private Orden orden;
 
     @Column(name = "id_producto", nullable = false)

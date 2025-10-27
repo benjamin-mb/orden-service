@@ -1,10 +1,7 @@
 package com.arka.orden_service.service;
 
 import com.arka.orden_service.component.NotificationsComponent;
-import com.arka.orden_service.dto.CrearOrdenEventDto;
-import com.arka.orden_service.dto.DetalleOrdenDto;
-import com.arka.orden_service.dto.UserResponse;
-import com.arka.orden_service.dto.VentaDto;
+import com.arka.orden_service.dto.*;
 import com.arka.orden_service.exceptions.OrdenInvalidStateException;
 import com.arka.orden_service.exceptions.OrdenNotFoundException;
 import com.arka.orden_service.messages.PublisherOrderCancelled;
@@ -119,17 +116,19 @@ public class OrdenService {
                 }
 
 
+
                 orden.setEstado(Estado.confirmada);
                 orden.setEstadoEnvio(EstadoEnvio.preparando);
                 repository.save(orden);
-                List<DetalleOrdenDto>detalles =new ArrayList<>();
+                List<DetalleOrdenVentaDto>detalles =new ArrayList<>();
                 orden.getDetalles()
                         .forEach(detalleOrden -> {
-                            DetalleOrdenDto detalleOrdenDto=new DetalleOrdenDto(
+                            DetalleOrdenVentaDto detalleOrdenDto=new DetalleOrdenVentaDto(
                                     detalleOrden.getIdProducto(),
                                     detalleOrden.getCantidad(),
                                     detalleOrden.getPrecioUnitario(),
-                                    detalleOrden.getSubtotal()
+                                    detalleOrden.getSubtotal(),
+                                    "confirmada"
                             );
                             detalles.add(detalleOrdenDto);
                         });
@@ -144,6 +143,21 @@ public class OrdenService {
                 orden.setEstado(Estado.cancelada);
 
                 publisherOrderCancelled.publisherOrderCancelled(orden);
+
+                List<DetalleOrdenVentaDto>detallesCancelados=new ArrayList<>();
+                orden.getDetalles()
+                        .forEach(detalleOrden -> {
+                            DetalleOrdenVentaDto detalleOrdenDto=new DetalleOrdenVentaDto(
+                                    detalleOrden.getIdProducto(),
+                                    detalleOrden.getCantidad(),
+                                    detalleOrden.getPrecioUnitario(),
+                                    detalleOrden.getSubtotal(),
+                                    "cancelada"
+                            );
+                            detallesCancelados.add(detalleOrdenDto);
+                        });
+                VentaDto ventaCancelada= new VentaDto(detallesCancelados);
+                notificationsComponent.notificacionConfirmacion(ventaCancelada);
                 return repository.save(orden);
             }
 
@@ -154,9 +168,10 @@ public class OrdenService {
 
     @Transactional
     public Mono<Orden> setEstadoEnvio(Integer idOrden, String nuevoEstadoString) {
+        String estadoString=nuevoEstadoString.toLowerCase();
         return Mono.fromCallable(() -> {
-            nuevoEstadoString.toLowerCase();
-            EstadoEnvio nuevoEstado=EstadoEnvio.valueOf(nuevoEstadoString);
+
+            EstadoEnvio nuevoEstado=EstadoEnvio.valueOf(estadoString);
             Orden orden = repository.findById(idOrden)
                     .orElseThrow(() -> new OrdenNotFoundException("Order not found with id: " + idOrden));
 
