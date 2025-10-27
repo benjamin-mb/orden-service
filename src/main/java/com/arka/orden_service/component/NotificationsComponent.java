@@ -5,6 +5,7 @@ import com.arka.orden_service.dto.*;
 import com.arka.orden_service.model.EstadoEnvio;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -17,7 +18,7 @@ public class NotificationsComponent {
     private final String urlWeebhookConfrimacionDeOrden;
 
 
-    public NotificationsComponent(RestClient.Builder restClient,
+    public NotificationsComponent(@Qualifier("externalRestClientBuilder")RestClient.Builder restClient,
                                   @Value("${notificacion.webhook.estado-envio.url}") String urlWeebhookEstadoEnvio,
                                   @Value("${notificacion.webhook.confirmacion-orden.url}") String urlWeebhookConfrimacionDeOrden) {
         this.restClient = restClient.build();

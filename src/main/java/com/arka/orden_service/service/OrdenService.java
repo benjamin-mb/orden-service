@@ -121,7 +121,7 @@ public class OrdenService {
 
 
                 orden.setEstado(Estado.confirmada);
-                orden.setEstadoEnvio(EstadoEnvio.preparando);
+                setEstadoEnvio(idOrden,"preparando");
                 repository.save(orden);
                 List<DetalleOrdenVentaDto>detalles =new ArrayList<>();
                 orden.getDetalles()
@@ -178,14 +178,17 @@ public class OrdenService {
             Orden orden = repository.findById(idOrden)
                     .orElseThrow(() -> new OrdenNotFoundException("Order not found with id: " + idOrden));
 
-            if (!orden.getEstado().equals(Estado.confirmada)) {
+            if(orden.getEstado().equals(Estado.cancelada)){
+                throw new OrdenInvalidStateException("Cannot change shipping status of a cancelled order");
+            }
+            if (!orden.getEstado().equals(Estado.confirmada) && !nuevoEstado.equals(EstadoEnvio.preparando)) {
                 throw new OrdenInvalidStateException("Cannot change shipping status of unconfirmed order");
             }
 
             EstadoEnvio estadoActual = orden.getEstadoEnvio();
 
-            if (estadoActual.equals(EstadoEnvio.recibido)) {
-                throw new OrdenInvalidStateException("Order must be confirmed first");
+            if (estadoActual.equals(EstadoEnvio.preparando)) {
+                throw new OrdenInvalidStateException("Order already on this state");
             }
 
             if (estadoActual.equals(EstadoEnvio.entregado)) {
